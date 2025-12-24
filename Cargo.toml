@@ -33,7 +33,8 @@ console_error_panic_hook = { version = "0.1", optional = true }
 getrandom = { version = "0.2", optional = true }
 
 # HTTP client for API-based embeddings (native only)
-reqwest = { version = "0.12", features = ["json", "blocking"], optional = true }
+# Using rustls-tls instead of native-tls for musl compatibility
+reqwest = { version = "0.12", default-features = false, features = ["json", "blocking", "rustls-tls"], optional = true }
 
 # HTTP server for frontend (native only)
 axum = { version = "0.7", optional = true }
