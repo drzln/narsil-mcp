@@ -152,11 +152,11 @@ function AppContent() {
             Connection Failed
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-            Could not connect to the code-intel server. Make sure it's running with the{' '}
+            Could not connect to the narsil-mcp server. Make sure it's running with the{' '}
             <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono">--http</code> flag.
           </p>
           <code className="block bg-slate-900 dark:bg-slate-800 text-slate-100 p-4 rounded-lg text-xs text-left font-mono">
-            ./code-intel --repos . --http --call-graph
+            ./narsil-mcp --repos . --http --call-graph
           </code>
         </div>
       </div>
@@ -175,7 +175,7 @@ function AppContent() {
               </svg>
             </div>
             <h1 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
-              code-intel
+              narsil-mcp
             </h1>
           </div>
           <span className="px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-full uppercase tracking-wide">
