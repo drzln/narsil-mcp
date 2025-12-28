@@ -68,19 +68,38 @@ A Rust-powered MCP (Model Context Protocol) server providing AI assistants with 
 
 ### One-Click Install
 
+**macOS / Linux:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/postrv/narsil-mcp/main/install.sh | bash
 ```
 
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/postrv/narsil-mcp/main/install.ps1 | iex
+```
+
+**Windows (Git Bash / MSYS2):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/postrv/narsil-mcp/main/install.sh | bash
+```
+
+> **Note for Windows users:** The PowerShell installer provides better error messages and native Windows integration. It will automatically configure your PATH and check for required build tools if building from source.
+
 ### From Source
 
+**Prerequisites:**
+- Rust 1.70 or later
+- On Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) with "Desktop development with C++"
+
 ```bash
-# Clone and build (requires Rust 1.70+)
+# Clone and build
 git clone git@github.com:postrv/narsil-mcp.git
 cd narsil-mcp
 cargo build --release
 
-# Binary will be at target/release/narsil-mcp
+# Binary will be at:
+# - macOS/Linux: target/release/narsil-mcp
+# - Windows: target/release/narsil-mcp.exe
 ```
 
 ### Feature Builds
@@ -116,6 +135,7 @@ cargo build --release --target wasm32-unknown-unknown --features wasm
 
 ### Basic Usage
 
+**macOS / Linux:**
 ```bash
 # Index a single repository
 narsil-mcp --repos /path/to/your/project
@@ -128,6 +148,21 @@ narsil-mcp --repos /path/to/project --verbose
 
 # Force re-index on startup
 narsil-mcp --repos /path/to/project --reindex
+```
+
+**Windows (PowerShell / CMD):**
+```powershell
+# Index a single repository
+narsil-mcp --repos C:\Users\YourName\Projects\my-project
+
+# Index multiple repositories
+narsil-mcp --repos C:\Projects\project1 --repos C:\Projects\project2
+
+# Enable verbose logging
+narsil-mcp --repos C:\Projects\my-project --verbose
+
+# Force re-index on startup
+narsil-mcp --repos C:\Projects\my-project --reindex
 ```
 
 ### Full Feature Set

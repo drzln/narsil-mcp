@@ -19,6 +19,7 @@ NC='\033[0m' # No Color
 REPO="postrv/narsil-mcp"
 BINARY_NAME="narsil-mcp"
 INSTALL_DIR="${HOME}/.local/bin"
+IS_WINDOWS=false
 
 # Detect platform
 detect_platform() {
@@ -34,8 +35,21 @@ detect_platform() {
         linux)
             os="unknown-linux-gnu"
             ;;
+        mingw*|msys*|cygwin*)
+            os="pc-windows-msvc"
+            IS_WINDOWS=true
+            BINARY_NAME="narsil-mcp.exe"
+            INSTALL_DIR="${LOCALAPPDATA}/Programs/narsil-mcp"
+            # Fallback if LOCALAPPDATA not set
+            if [ -z "$INSTALL_DIR" ] || [ "$INSTALL_DIR" = "/Programs/narsil-mcp" ]; then
+                INSTALL_DIR="${HOME}/AppData/Local/Programs/narsil-mcp"
+            fi
+            ;;
         *)
             echo -e "${RED}Error: Unsupported operating system: $os${NC}"
+            echo -e "${YELLOW}Detected: $os${NC}"
+            echo -e "${YELLOW}If you're on Windows, use the PowerShell installer:${NC}"
+            echo -e "${YELLOW}  irm https://raw.githubusercontent.com/${REPO}/main/install.ps1 | iex${NC}"
             exit 1
             ;;
     esac
@@ -72,27 +86,65 @@ install_binary() {
     tmpdir=$(mktemp -d)
     trap 'rm -rf "$tmpdir"' EXIT
 
-    local download_url="https://github.com/${REPO}/releases/download/${version}/${BINARY_NAME}-${platform}.tar.gz"
-
     echo -e "${BLUE}Downloading narsil-mcp ${version} for ${platform}...${NC}"
 
-    if ! curl -fsSL "$download_url" -o "$tmpdir/narsil-mcp.tar.gz" 2>/dev/null; then
-        echo -e "${YELLOW}Pre-built binary not available. Building from source...${NC}"
-        install_from_source
-        return
-    fi
+    if [ "$IS_WINDOWS" = true ]; then
+        # Windows: download .exe directly
+        local artifact_name="narsil-mcp-windows-x86_64.exe"
+        local download_url="https://github.com/${REPO}/releases/download/${version}/${artifact_name}"
 
-    echo -e "${BLUE}Extracting...${NC}"
-    tar -xzf "$tmpdir/narsil-mcp.tar.gz" -C "$tmpdir"
+        if ! curl -fsSL "$download_url" -o "$tmpdir/${BINARY_NAME}" 2>/dev/null; then
+            echo -e "${YELLOW}Pre-built binary not available. Building from source...${NC}"
+            install_from_source
+            return
+        fi
+    else
+        # Unix: download and extract tar.gz
+        local download_url="https://github.com/${REPO}/releases/download/${version}/narsil-mcp-${platform}.tar.gz"
+
+        if ! curl -fsSL "$download_url" -o "$tmpdir/narsil-mcp.tar.gz" 2>/dev/null; then
+            echo -e "${YELLOW}Pre-built binary not available. Building from source...${NC}"
+            install_from_source
+            return
+        fi
+
+        echo -e "${BLUE}Extracting...${NC}"
+        tar -xzf "$tmpdir/narsil-mcp.tar.gz" -C "$tmpdir"
+    fi
 
     # Create install directory if needed
     mkdir -p "$INSTALL_DIR"
 
     # Install binary
-    mv "$tmpdir/narsil-mcp" "$INSTALL_DIR/"
-    chmod +x "$INSTALL_DIR/narsil-mcp"
+    mv "$tmpdir/${BINARY_NAME}" "$INSTALL_DIR/"
+    chmod +x "$INSTALL_DIR/${BINARY_NAME}"
 
     echo -e "${GREEN}Installed narsil-mcp to ${INSTALL_DIR}/${NC}"
+}
+
+# Check for C compiler on Windows
+check_windows_compiler() {
+    if [ "$IS_WINDOWS" != true ]; then
+        return 0
+    fi
+
+    # Check for cl.exe (MSVC) or gcc (MinGW)
+    if command -v cl.exe &> /dev/null || command -v gcc &> /dev/null; then
+        return 0
+    fi
+
+    echo -e "${RED}Error: C++ compiler not found!${NC}"
+    echo -e "${YELLOW}You need Visual Studio Build Tools to compile Rust programs on Windows.${NC}"
+    echo ""
+    echo -e "${YELLOW}Download from:${NC}"
+    echo "  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022"
+    echo ""
+    echo -e "${YELLOW}In the installer, select 'Desktop development with C++'.${NC}"
+    echo -e "${YELLOW}After installation, restart your terminal and run this script again.${NC}"
+    echo ""
+    echo -e "${YELLOW}Alternatively, use the PowerShell installer which provides better error messages:${NC}"
+    echo -e "${YELLOW}  irm https://raw.githubusercontent.com/${REPO}/main/install.ps1 | iex${NC}"
+    exit 1
 }
 
 # Install from source using cargo
@@ -106,6 +158,9 @@ install_from_source() {
         # shellcheck source=/dev/null
         source "$HOME/.cargo/env"
     fi
+
+    # Check for C compiler on Windows
+    check_windows_compiler
 
     echo -e "${BLUE}Building narsil-mcp (this may take a few minutes)...${NC}"
     if [ -n "$features" ]; then
@@ -171,9 +226,18 @@ configure_ide() {
 
     # Claude Desktop
     local claude_config=""
-    if [ -d "$HOME/Library/Application Support/Claude" ]; then
+    if [ "$IS_WINDOWS" = true ]; then
+        # Windows: %APPDATA%\Claude
+        if [ -n "$APPDATA" ] && [ -d "$APPDATA/Claude" ]; then
+            claude_config="$APPDATA/Claude/claude_desktop_config.json"
+        elif [ -d "$HOME/AppData/Roaming/Claude" ]; then
+            claude_config="$HOME/AppData/Roaming/Claude/claude_desktop_config.json"
+        fi
+    elif [ -d "$HOME/Library/Application Support/Claude" ]; then
+        # macOS
         claude_config="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
     elif [ -d "$HOME/.config/Claude" ]; then
+        # Linux
         claude_config="$HOME/.config/Claude/claude_desktop_config.json"
     fi
 
